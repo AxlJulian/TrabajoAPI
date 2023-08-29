@@ -1,22 +1,30 @@
-using NLog;
 using CompanyEmployees.Extensions;
+using Contracts;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using NLog;
+using Repository;
 
-var builder = WebApplication.CreateBuilder(args);
-    LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(),
-    "/nlog.config"));
+    var builder = WebApplication.CreateBuilder(args);
+
     builder.Services.ConfigureCors();
     builder.Services.ConfigureIISIntegration();
     builder.Services.ConfigureLoggerService();
-    builder.Services.AddControllers();
-    
+    builder.Services.ConfigureRepositoryManager();
+    //builder.Services.ConfigureServiceManager();
+    builder.Services.ConfigureSqlContext(builder.Configuration);
+    builder.Services.AddAutoMapper(typeof(Program));
+    builder.Services.AddControllers()
+    .AddApplicationPart(typeof(CompanyEmployees.Presentation.AssemblyReference).Assembly);
+
+
     var app = builder.Build();
-    if (app.Environment.IsDevelopment())
-        app.UseDeveloperExceptionPage();
-    else
+    var logger = app.Services.GetRequiredService<ILoggerManager>();
+    app.ConfigureExceptionHandler(logger);
+    if (app.Environment.IsProduction())
         app.UseHsts();
 
-    builder.Services.AddControllers();  
 
     app.UseHttpsRedirection();
     app.UseStaticFiles();
@@ -69,6 +77,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 
-    //app.MapControllers();
 
-    
+
+
+//app.MapControllers();
+
+
